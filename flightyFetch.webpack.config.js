@@ -6,8 +6,5 @@ module.exports = {
 		libraryTarget: "umd",
 		library: "flightyFetch"
 	},
-	devtool: 'source-map',
-	resolve: {
-		extensions: ['', '.ts', '.js']
-	}
+	devtool: 'source-map'
 }

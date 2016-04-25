@@ -14,4 +14,20 @@ export interface FlightyFetchInit extends RequestInit {
  * @param options (optional) any options for initializing the request
  * @return a promise of the response to the fetch request
  */
-export default function flightyFetchAsync(input: string | Request, options?: FlightyFetchInit): Promise<Response>;
+export declare function fetch(input: string | Request, options?: FlightyFetchInit): Promise<Response>;
+/**
+ * An error thrown if a fetch is cancelled.
+ */
+export declare class CancellationError extends Error {
+    message: string;
+    /**
+     * Constructs a cancellation error with the specified message.
+     *
+     * @param message the message for this error
+     */
+    constructor(message: string);
+    /**
+     * Returns a string that includes the error name and message.
+     */
+    toString(): string;
+}

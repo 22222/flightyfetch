@@ -16,7 +16,7 @@ export interface FlightyFetchInit extends RequestInit {
  * @param options (optional) any options for initializing the request
  * @return a promise of the response to the fetch request
  */
-export default function flightyFetchAsync(input: string | Request, options?: FlightyFetchInit): Promise<Response> {
+export function fetch(input: string | Request, options?: FlightyFetchInit): Promise<Response> {
 	function promiseCallback(resolve: (value: Response) => void, reject: (error: Error) => void): void {
 		var request: Request;
 		if (Request.prototype.isPrototypeOf(input) && !options) {
@@ -51,7 +51,7 @@ export default function flightyFetchAsync(input: string | Request, options?: Fli
 
 				// Having an empty blob for a body can break things with some status codes in chrome.
 				if (status != 200) {
-					responseBody = clearBodyIfEmpty(responseBody);
+					responseBody = normalizeBody(responseBody);
 				}
 
 				var responseHeaders = parseResponseHeaders(xhr);
@@ -129,6 +129,29 @@ export default function flightyFetchAsync(input: string | Request, options?: Fli
 }
 
 /**
+ * An error thrown if a fetch is cancelled.
+ */
+export class CancellationError extends Error {
+	/**
+	 * Constructs a cancellation error with the specified message.
+	 * 
+	 * @param message the message for this error 
+	 */
+	constructor(public message: string) {
+		super(message);
+		this.name = 'CancellationError';
+		this.message = message;
+	}
+	
+	/**
+	 * Returns a string that includes the error name and message. 
+	 */
+	toString() {
+		return this.name + ': ' + this.message;
+	}
+}
+
+/**
  * Parses the response headers from an XMLHttpRequest to a fetch api Headers object.
  */
 function parseResponseHeaders(xhr: XMLHttpRequest): Headers {
@@ -172,13 +195,13 @@ function getRequestDataAsync(request: Request): Promise<BodyInit> {
 	}
 
 	// We don't want to send anything if the body is empty
-	result = result.then(clearBodyIfEmpty);
+	result = result.then(normalizeBody);
 
 	return result;
 }
 
 /**
- * Parses the content type from a fetch api Request object.
+ * Parses and returns the content type from a fetch api Request object.
  */
 function parseContentType(request: Request): string {
 	if (!request || !request.headers) return null
@@ -197,9 +220,9 @@ function parseContentType(request: Request): string {
 }
 
 /**
- * Returns the given body if it is not empty, otherwise returns undefined.
+ * Returns the given request/response body if it is not empty, otherwise returns undefined.
  */
-function clearBodyIfEmpty(bodyInit: BodyInit): BodyInit {
+function normalizeBody(bodyInit: BodyInit): BodyInit {
 	var modifiedBodyInit = bodyInit;
 	if (modifiedBodyInit) {
 		if (typeof (<Blob>bodyInit).size === 'number' && (<Blob>bodyInit).size === 0) {
@@ -219,18 +242,4 @@ function stringStartsWith(str: string, searchString: string): boolean {
 		return (<any>str).startsWith(searchString);
 	}
 	return str.substr(0, searchString.length) === searchString;
-}
-
-/**
- * An error thrown if a fetch is cancelled.
- */
-class CancellationError extends Error {
-	constructor(public message: string) {
-		super(message);
-		this.name = 'CancellationError';
-		this.message = message;
-	}
-	toString() {
-		return this.name + ': ' + this.message;
-	}
 }

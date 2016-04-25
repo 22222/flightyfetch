@@ -1,5 +1,5 @@
-import flightyFetchAsync from './flightyFetch'
-import { assert as assert } from 'chai'
+import { fetch } from './flightyFetch'
+import { assert } from 'chai'
 import * as sinon from 'sinon'
 
 var support = {
@@ -9,7 +9,7 @@ var support = {
 
 describe('with real xhr', function () {
 	it('should reject on not found error', function () {
-		return flightyFetchAsync('/notfound').catch(e => {
+		return fetch('/notfound').catch(e => {
 			assert.instanceOf(e, Error);
 		});
 	});
@@ -50,7 +50,7 @@ describe('with mocked xhr', function () {
 
 	describe('sucessful requests', function () {
 		it('should fetch plain text file', function () {
-			var fetchPromise = flightyFetchAsync('/helloworld.txt').then(response => {
+			var fetchPromise = fetch('/helloworld.txt').then(response => {
 				assert.equal(response.status, 200);
 				assert.equal(response.statusText, 'OK');
 				assert.equal(response.headers.get('Content-Length'), '12');
@@ -93,7 +93,7 @@ describe('with mocked xhr', function () {
 				]
 			};
 
-			var fetchPromise = flightyFetchAsync('https://api.github.com/search/repositories?q=fetch', {
+			var fetchPromise = fetch('https://api.github.com/search/repositories?q=fetch', {
 				headers: {
 					'Host': 'api.github.com',
 					'Connection': 'keep-alive',
@@ -139,7 +139,7 @@ describe('with mocked xhr', function () {
 		});
 
 		it('should post plain text file', function () {
-			var fetchPromise = flightyFetchAsync('/helloworld.txt', {
+			var fetchPromise = fetch('/helloworld.txt', {
 				method: 'post',
 				body: 'Hello world!',
 				headers: {
@@ -160,7 +160,7 @@ describe('with mocked xhr', function () {
 		var allowedStatusCodes = [204, 400, 401, 403, 404, 500, 599];
 		for (let allowedStatusCode of allowedStatusCodes) {
 			it('should resolve if status code is ' + allowedStatusCode, function () {
-				var fetchPromise = flightyFetchAsync('/helloworld.txt').then(response => {
+				var fetchPromise = fetch('/helloworld.txt').then(response => {
 					assert.equal(response.status, allowedStatusCode);
 				});
 				respondOnSend(allowedStatusCode, null, null);
@@ -169,7 +169,7 @@ describe('with mocked xhr', function () {
 		}
 
 		it('might resolve or reject is status code is 100', function () {
-			var fetchPromise = flightyFetchAsync('/helloworld.txt').then(response => {
+			var fetchPromise = fetch('/helloworld.txt').then(response => {
 				// The polyfill and Firefox implementations should allow a status of 100
 				assert.equal(response.status, 100);
 			}).catch(e => {
@@ -182,7 +182,7 @@ describe('with mocked xhr', function () {
 		});
 
 		it('should resolve and normalize if status code is 1223', function () {
-			var fetchPromise = flightyFetchAsync('/helloworld.txt').then(response => {
+			var fetchPromise = fetch('/helloworld.txt').then(response => {
 				assert.equal(response.status, 204);
 			});
 			respondOnSend(1223);
@@ -192,7 +192,7 @@ describe('with mocked xhr', function () {
 
 	describe('failed requests', function () {
 		it('should reject if status code less than 100', function () {
-			var fetchPromise = flightyFetchAsync('/helloworld.txt').catch(e => {
+			var fetchPromise = fetch('/helloworld.txt').catch(e => {
 				assert.instanceOf(e, Error);
 				assert.equal((<Error>e).message, 'Network request failed');
 				assert.equal((<Error>e).name, 'TypeError');
@@ -201,7 +201,7 @@ describe('with mocked xhr', function () {
 			return fetchPromise;
 		});
 		it('should reject if status code greater than 599', function () {
-			var fetchPromise = flightyFetchAsync('/helloworld.txt').catch(e => {
+			var fetchPromise = fetch('/helloworld.txt').catch(e => {
 				assert.instanceOf(e, Error);
 				assert.equal((<Error>e).message, 'Network request failed');
 				assert.equal((<Error>e).name, 'TypeError');
@@ -218,7 +218,7 @@ describe('with mocked xhr', function () {
 				expectedFormData.append('id', '2');
 				expectedFormData.append('message', 'Hello world!');
 
-				var fetchPromise = flightyFetchAsync('/submit', {
+				var fetchPromise = fetch('/submit', {
 					method: 'post',
 					headers: {
 						'Content-Type': 'multipart/form-data'
@@ -242,7 +242,7 @@ describe('with mocked xhr', function () {
 		describe('blob requests', function () {
 			it('should post blob file', function () {
 				var expectedBlob = new Blob(['Hello world!'], { type: 'application/x-text' });
-				var fetchPromise = flightyFetchAsync('/helloworld.dat', {
+				var fetchPromise = fetch('/helloworld.dat', {
 					method: 'post',
 					body: expectedBlob
 				}).then(response => response.blob()).then(responseBlob => {
@@ -263,7 +263,7 @@ describe('with mocked xhr', function () {
 
 	describe('cancelled requests', function () {
 		it('should reject if cancelled before starting', function () {
-			return flightyFetchAsync('/helloworld.txt', {
+			return fetch('/helloworld.txt', {
 				cancellationPromise: Promise.resolve(true)
 			}).catch(e => {
 				assert.instanceOf(e, Error);
@@ -274,7 +274,7 @@ describe('with mocked xhr', function () {
 
 		it('should reject if cancelled immediately after starting', function () {
 			var cancelCallback: () => void;
-			var fetchPromise = flightyFetchAsync('/helloworld.txt', {
+			var fetchPromise = fetch('/helloworld.txt', {
 				cancellationPromise: new Promise<boolean>(function (resolve) {
 					cancelCallback = () => resolve(true);
 				})
@@ -289,7 +289,7 @@ describe('with mocked xhr', function () {
 
 		it('should reject if cancelled immediately after sending', function () {
 			var cancelCallback: () => void;
-			var fetchPromise = flightyFetchAsync('/helloworld.txt', {
+			var fetchPromise = fetch('/helloworld.txt', {
 				cancellationPromise: new Promise<boolean>(function (resolve) {
 					cancelCallback = () => resolve(true);
 				})
@@ -305,7 +305,7 @@ describe('with mocked xhr', function () {
 		});
 
 		it('should reject if cancelled after starting with delay', function () {
-			var fetchPromise = flightyFetchAsync('/helloworld.txt', {
+			var fetchPromise = fetch('/helloworld.txt', {
 				cancellationPromise: new Promise<boolean>(function (resolve) {
 					setTimeout(() => resolve(true), 500);
 				})
@@ -319,7 +319,7 @@ describe('with mocked xhr', function () {
 
 		it('should reject if cancelled after sending with delay', function () {
 			var cancelCallback: () => void;
-			var fetchPromise = flightyFetchAsync('/helloworld.txt', {
+			var fetchPromise = fetch('/helloworld.txt', {
 				cancellationPromise: new Promise<boolean>(function (resolve) {
 					cancelCallback = () => resolve(true);
 				})
@@ -336,7 +336,7 @@ describe('with mocked xhr', function () {
 
 		it('should resolve if cancelled after response', function () {
 			var cancelCallback: () => void;
-			var fetchPromise = flightyFetchAsync('/helloworld.txt', {
+			var fetchPromise = fetch('/helloworld.txt', {
 				cancellationPromise: new Promise<boolean>(function (resolve) {
 					cancelCallback = () => resolve(true);
 				})
@@ -351,7 +351,7 @@ describe('with mocked xhr', function () {
 		});
 
 		it('should resolve if cancellationPromise resolves to false', function () {
-			var fetchPromise = flightyFetchAsync('/helloworld.txt', {
+			var fetchPromise = fetch('/helloworld.txt', {
 				cancellationPromise: Promise.resolve(false)
 			}).then(response => response.text()).then(responseText => {
 				assert.equal(responseText, 'Hello world!');
@@ -361,7 +361,7 @@ describe('with mocked xhr', function () {
 		});
 
 		it('should resolve if cancellationPromise rejects', function () {
-			var fetchPromise = flightyFetchAsync('/helloworld.txt', {
+			var fetchPromise = fetch('/helloworld.txt', {
 				cancellationPromise: Promise.reject(true)
 			}).then(response => response.text()).then(responseText => {
 				assert.equal(responseText, 'Hello world!');
@@ -371,7 +371,7 @@ describe('with mocked xhr', function () {
 		});
 
 		it('should reject if cancellation promise resolves with undefined', function () {
-			return flightyFetchAsync('/helloworld.txt', {
+			return fetch('/helloworld.txt', {
 				cancellationPromise: Promise.resolve()
 			}).catch(e => {
 				assert.instanceOf(e, Error);
@@ -381,7 +381,7 @@ describe('with mocked xhr', function () {
 		});
 
 		it('should reject if cancellation promise resolves with zero', function () {
-			return flightyFetchAsync('/helloworld.txt', {
+			return fetch('/helloworld.txt', {
 				cancellationPromise: Promise.resolve(<any>0)
 			}).catch(e => {
 				assert.instanceOf(e, Error);

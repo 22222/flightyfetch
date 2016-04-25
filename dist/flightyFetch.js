@@ -67,7 +67,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	 * @param options (optional) any options for initializing the request
 	 * @return a promise of the response to the fetch request
 	 */
-	function flightyFetchAsync(input, options) {
+	function fetch(input, options) {
 	    function promiseCallback(resolve, reject) {
 	        var request;
 	        if (Request.prototype.isPrototypeOf(input) && !options) {
@@ -100,7 +100,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	                }
 	                // Having an empty blob for a body can break things with some status codes in chrome.
 	                if (status != 200) {
-	                    responseBody = clearBodyIfEmpty(responseBody);
+	                    responseBody = normalizeBody(responseBody);
 	                }
 	                var responseHeaders = parseResponseHeaders(xhr);
 	                var responseOptions = {
@@ -176,8 +176,32 @@ return /******/ (function(modules) { // webpackBootstrap
 	        }
 	    });
 	}
-	Object.defineProperty(exports, "__esModule", { value: true });
-	exports.default = flightyFetchAsync;
+	exports.fetch = fetch;
+	/**
+	 * An error thrown if a fetch is cancelled.
+	 */
+	var CancellationError = (function (_super) {
+	    __extends(CancellationError, _super);
+	    /**
+	     * Constructs a cancellation error with the specified message.
+	     *
+	     * @param message the message for this error
+	     */
+	    function CancellationError(message) {
+	        _super.call(this, message);
+	        this.message = message;
+	        this.name = 'CancellationError';
+	        this.message = message;
+	    }
+	    /**
+	     * Returns a string that includes the error name and message.
+	     */
+	    CancellationError.prototype.toString = function () {
+	        return this.name + ': ' + this.message;
+	    };
+	    return CancellationError;
+	}(Error));
+	exports.CancellationError = CancellationError;
 	/**
 	 * Parses the response headers from an XMLHttpRequest to a fetch api Headers object.
 	 */
@@ -221,11 +245,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	        result = request.text();
 	    }
 	    // We don't want to send anything if the body is empty
-	    result = result.then(clearBodyIfEmpty);
+	    result = result.then(normalizeBody);
 	    return result;
 	}
 	/**
-	 * Parses the content type from a fetch api Request object.
+	 * Parses and returns the content type from a fetch api Request object.
 	 */
 	function parseContentType(request) {
 	    if (!request || !request.headers)
@@ -241,9 +265,9 @@ return /******/ (function(modules) { // webpackBootstrap
 	    return contentType;
 	}
 	/**
-	 * Returns the given body if it is not empty, otherwise returns undefined.
+	 * Returns the given request/response body if it is not empty, otherwise returns undefined.
 	 */
-	function clearBodyIfEmpty(bodyInit) {
+	function normalizeBody(bodyInit) {
 	    var modifiedBodyInit = bodyInit;
 	    if (modifiedBodyInit) {
 	        if (typeof bodyInit.size === 'number' && bodyInit.size === 0) {
@@ -264,22 +288,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	    }
 	    return str.substr(0, searchString.length) === searchString;
 	}
-	/**
-	 * An error thrown if a fetch is cancelled.
-	 */
-	var CancellationError = (function (_super) {
-	    __extends(CancellationError, _super);
-	    function CancellationError(message) {
-	        _super.call(this, message);
-	        this.message = message;
-	        this.name = 'CancellationError';
-	        this.message = message;
-	    }
-	    CancellationError.prototype.toString = function () {
-	        return this.name + ': ' + this.message;
-	    };
-	    return CancellationError;
-	}(Error));
 	//# sourceMappingURL=flightyFetch.js.map
 
 /***/ }

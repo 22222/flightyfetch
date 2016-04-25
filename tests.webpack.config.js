@@ -8,10 +8,13 @@ module.exports = {
 	},
 	externals: {
 		'chai': true,
-		'sinon': true
+		'sinon': true,
+		'./flightyFetch': {
+			root: 'flightyFetch',
+			commonjs2: 'flightyfetch',
+			commonjs: 'flightyfetch',
+			amd: 'flightyfetch'
+		}
 	},
-	devtool: 'source-map',
-	resolve: {
-		extensions: ['', '.ts', '.js']
-	}
+	devtool: 'source-map'
 }

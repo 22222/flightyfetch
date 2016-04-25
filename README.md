@@ -17,7 +17,7 @@ npm install flightyfetch
 Here's an example of using it:
 
 ```javascript
-var flightyFetch = require('flightyfetch');
+var flightyFetch = require('flightyfetch').fetch;
 flightyFetch('https://api.github.com/search/repositories?q=fetch', {
 	cancellationPromise: new Promise(function(resolve) {
 		setTimeout(function() { resolve(true); }, 10000);
@@ -36,7 +36,7 @@ You can also download [flightyFetch.js](dist/flightyFetch.js) or the [minified](
 ```html
 <script src="dist/flightyFetch.js"></script>
 <script>
-flightyFetch('https://api.github.com/search/repositories?q=fetch');
+flightyFetch.fetch('https://api.github.com/search/repositories?q=fetch');
 </script>
 ```
 
@@ -52,7 +52,7 @@ There was already an example in the [Install](#install) section, but here's anot
 
 ```javascript
 var cancellationCallback;
-flightyFetch('https://api.github.com/search/repositories?q=fetch', {
+flightyFetch.fetch('https://api.github.com/search/repositories?q=fetch', {
 	cancellationPromise: new Promise(function(resolve) {
 		cancellationCallback = resolve
 	})
