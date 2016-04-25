@@ -1,0 +1,40 @@
+{
+  "name": "flightyfetch",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/flightyFetch.js",
+  "typings": "dist/flightyFetch.d.ts",
+  "scripts": {
+    "clean": "rimraf ./dist",
+    "compile-ts": "tsc",
+    "compile-webpack": "webpack --config flightyFetch.webpack.config.js && webpack --config tests.webpack.config.js",
+    "compile": "npm run compile-ts && npm run compile-webpack",
+    "test": "mocha-phantomjs tests.html",
+    "compile:test": "npm run compile && npm run test",
+    "minify": "cd dist && uglifyjs flightyFetch.js -o flightyFetch.min.js --source-map-in flightyFetch.js.map --source-map flightyFetch.min.js.map",
+    "karma": "karma start --single-run",
+    "build": "npm run clean && npm run compile && npm run minify && npm run test"
+  },
+  "author": "22222",
+  "license": "Unlicense",
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "es6-promise": "^3.1.2",
+    "karma": "^0.13.22",
+    "karma-chrome-launcher": "^0.2.3",
+    "karma-firefox-launcher": "^0.1.7",
+    "karma-ie-launcher": "^0.2.0",
+    "karma-mocha": "^0.2.2",
+    "karma-safari-launcher": "^0.1.1",
+    "mocha": "^2.4.5",
+    "mocha-phantomjs": "^4.0.2",
+    "phantomjs-prebuilt": "^2.1.7",
+    "rimraf": "^2.5.2",
+    "sinon": "^1.17.3",
+    "typescript": "^1.8.10",
+    "typings": "^0.8.1",
+    "uglify-js": "^2.6.2",
+    "webpack": "^1.13.0",
+    "whatwg-fetch": "^0.11.0"
+  }
+}

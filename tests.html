@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>Flighty Fetch Tests</title>
+	<link href="node_modules/mocha/mocha.css" rel="stylesheet">
+</head>
+
+<body>
+	<div id="mocha"></div>
+
+	<script src="node_modules/mocha/mocha.js"></script>
+	<script src="node_modules/chai/chai.js"></script>
+	<script src="node_modules/sinon/pkg/sinon.js"></script>
+	<script>
+		mocha.setup('bdd');
+	</script>
+	<script src="node_modules/es6-promise/dist/es6-promise.js"></script>
+	<script src="node_modules/whatwg-fetch/fetch.js"></script>
+	<script src="dist/flightyFetch.js"></script>
+	<script src="dist/tests.js"></script>
+	<script>
+		mocha.checkLeaks();
+		mocha.globals(['Promise', 'Request', 'Response', 'chai', 'sinon']);
+		mocha.run();
+	</script>
+</body>
+
+</html>
