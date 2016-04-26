@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>Flighty Fetch Demo</title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7"
+		crossorigin="anonymous">
+</head>
+
+<body>
+	<main class="container">
+		<article id="example1">
+			<h1>Basic Timeout</h1>
+			<p class="help-text">
+				In this example, the request will timeout after the amount of time that you specify. Click the button to try it.
+			</p>
+
+			<section>
+				<div class="form-group">
+					<label for="example1-timeout">Timeout (milliseconds)</label>
+					<input class="form-control" id="example1-timeout" type="number" min="0" step="1" value="1000">
+				</div>
+				<button class="btn btn-default" id="example1-fetch">Fetch Github Repositories</button>
+			</section>
+			<section>
+				<h2>Results</h2>
+				<div id="example1-results">
+					None
+				</div>
+			</section>
+		</article>
+
+		<hr>
+
+		<article id="example2">
+			<h1>Find As You Type</h1>
+			<p class="help-text">
+				This example searches for github repositories as you type. If a request is pending when you type more, the old request is
+				cancelled and a new one is started.
+			</p>
+			<p class="help-text">
+				The github api is rate limited, so it will probably stop working after you try it a few times.
+			</p>
+			<section>
+				<div class="form-group">
+					<label for="example2-input">Search</label>
+					<input class="form-control" id="example2-input" type="search">
+				</div>
+			</section>
+			<section>
+				<h2>Results</h2>
+				<div id="example2-results">
+					None
+				</div>
+			</section>
+		</article>
+	</main>
+
+	<script src="node_modules/es6-promise/dist/es6-promise.js"></script>
+	<script src="node_modules/whatwg-fetch/fetch.js"></script>
+	<script src="dist/flightyFetch.js"></script>
+	<script>
+		function escapeHtml(str) {
+			try {
+				var div = document.createElement('div');
+				div.appendChild(document.createTextNode(str));
+				return div.innerHTML;
+			} catch (e) {
+				return str;
+			}
+		}
+
+		// Example 1
+		(function() {
+			var timeoutInput = document.getElementById('example1-timeout');
+			var resultsDiv = document.getElementById('example1-results');
+			var fetchButton = document.getElementById('example1-fetch');
+			function fetchHandler() {
+				fetchButton.disabled = true;
+				resultsDiv.innerHTML = 'Fetching...';
+				
+				var timeoutMs = timeoutInput.value || 1000;
+				var cancellationPromise = new Promise(function(resolve) {
+					setTimeout(function() {
+						resolve(true);
+					}, timeoutMs);
+				});
+				var fetchPromise = flightyFetch.fetch('https://api.github.com/repositories', {
+					cancellationPromise: cancellationPromise
+				});
+				fetchPromise.then(function(response) { return response.json() })
+					.then(function(results) {
+						var resultsBuilder = [];
+						resultsBuilder.push('<ul>');
+						for (var i in results) {
+							var result = results[i];
+							resultsBuilder.push('<li>');
+							resultsBuilder.push('<a href="' + result.url + '">')
+							resultsBuilder.push(escapeHtml(result.full_name));
+							resultsBuilder.push(' (id =' + result.id + ')')
+							resultsBuilder.push("</a>");
+							resultsBuilder.push('</li>');
+						}
+						resultsBuilder.push('</ul>');
+						
+						var resultsHtml = resultsBuilder.join('');
+						resultsDiv.innerHTML = resultsHtml;
+					})
+					.catch(function(e) {
+						var message;
+						if (e.name === 'CancellationError') {
+							message = 'Request cancelled';
+						} else {
+							message = 'Request failed';
+						}
+						console.log(message, e);
+						resultsDiv.innerHTML = message;
+					})
+					.then(function() {
+						fetchButton.disabled = false;
+					});
+			}
+			fetchButton.addEventListener('click', fetchHandler);
+		}());
+		
+		// Example 2
+		(function() {
+			var searchInput = document.getElementById('example2-input');
+			var resultsDiv = document.getElementById('example2-results');
+			
+			var lastCancellationCallback = null;
+			function fetchHandler() {
+				var q = searchInput.value;
+				if (lastCancellationCallback != null) {
+					console.log('Cancelling previous request');
+					lastCancellationCallback(true);
+					lastCancellationCallback = null;
+				} else {
+					resultsDiv.innerHTML = 'Fetching . . .';
+				}
+
+				console.log('Fetching for "' + escapeHtml(q) + '"');
+				if (!q || q.length === 0) {
+					resultsDiv.innerHTML = 'None';
+					return;
+				}
+				
+				var cancellationCallback;
+				var cancellationPromise = new Promise(function(resolve) {
+					cancellationCallback = lastCancellationCallback = resolve;
+				});
+
+				var fetchUrl = 'https://api.github.com/search/repositories?q=' + encodeURIComponent(q);
+				var fetchPromise = flightyFetch.fetch(fetchUrl, {
+					cancellationPromise: cancellationPromise
+				});
+				fetchPromise.then(function(response) { return response.json() })
+					.then(function(responseJson) {
+						var items = responseJson.items;
+						if (items.length === 0) {
+							resultsDiv.innerHTML = 'None';
+							return;
+						}
+
+						var resultsBuilder = [];
+						resultsBuilder.push('<ul>');
+						for (var i in items) {
+							var result = items[i];
+							resultsBuilder.push('<li>');
+							resultsBuilder.push('<a href="' + result.url + '">')
+							resultsBuilder.push(escapeHtml(result.full_name));
+							resultsBuilder.push(' (id =' + result.id + ')')
+							resultsBuilder.push("</a>");
+							resultsBuilder.push('</li>');
+						}
+						resultsBuilder.push('</ul>');
+
+						var resultsHtml = resultsBuilder.join('');
+						resultsDiv.innerHTML = resultsHtml;
+					})
+					.catch(function(e) {
+						var message;
+						if (e.name === 'CancellationError') {
+							message = 'Request cancelled';
+						} else {
+							message = 'Request failed';
+						}
+						console.log(message, e);
+					})
+					.then(function() {
+						cancellationCallback(false);
+						if (lastCancellationCallback === cancellationCallback) {
+							lastCancellationCallback = null;
+						}
+						console.log('Fetch complete for "' + escapeHtml(q) + '"...');
+					});
+			}
+
+			function debounce(func, delay) {
+				var timeout = null;
+				return function() {
+					clearTimeout(timeout);
+					timeout = setTimeout(function() {
+						timeout = null;
+						func();
+					}, delay);
+				};
+			}
+			searchInput.addEventListener('keypress', debounce(fetchHandler, 500));
+		}());
+	</script>
+</body>
+
+</html>

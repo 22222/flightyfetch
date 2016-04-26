@@ -14,7 +14,7 @@
     "compile:test": "npm run compile && npm run test",
     "minify": "cd dist && uglifyjs flightyFetch.js -o flightyFetch.min.js --source-map-in flightyFetch.js.map --source-map flightyFetch.min.js.map",
     "karma": "karma start --single-run",
-    "build": "npm run init && npm run clean && npm run compile && npm run minify && npm run test"
+    "build": "npm run clean && npm run compile && npm run minify && npm run test"
   },
   "author": "22222",
   "license": "Unlicense",

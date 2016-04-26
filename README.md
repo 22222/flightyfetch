@@ -6,21 +6,21 @@ But XHR has an `abort` function for cancelling a request, and so far there's no 
 
 But you don't want to wait to use the fetch api just because you need to be able to cancel a request, right?  That's where this library comes in: its goal is to be completely compatible with the fetch api except for the addition of a cancellation feature.
 
-Install
-=======
+Quick Start:
+============
 This thing can be installed with npm:
 
 ```sh
 npm install flightyfetch
 ```
 
-Here's an example of using it:
+Then it can be used like this:
 
 ```javascript
 var flightyFetch = require('flightyfetch').fetch;
 flightyFetch('https://api.github.com/search/repositories?q=fetch', {
 	cancellationPromise: new Promise(function(resolve) {
-		setTimeout(function() { resolve(true); }, 10000);
+		setTimeout(function() { resolve(true); }, 1000);
 	})
 }).then(function(response) { 
 	return response.json();
@@ -31,7 +31,7 @@ flightyFetch('https://api.github.com/search/repositories?q=fetch', {
 });
 ```
 
-You can also download [flightyFetch.js](dist/flightyFetch.js) or the [minified](dist/flightyFetch.min.js) version directly.  Then it can be included in an HTML document like this:
+You can also download [flightyFetch.js](dist/flightyFetch.js) or the [minified](dist/flightyFetch.min.js) version directly, like this:
 
 ```html
 <script src="dist/flightyFetch.js"></script>
@@ -40,15 +40,19 @@ flightyFetch.fetch('https://api.github.com/search/repositories?q=fetch');
 </script>
 ```
 
-Use
-===
+Examples
+========
 Except for the addition of the cancellation feature, using this is exactly like using the [fetch api](https://fetch.spec.whatwg.org/).  There's already great documentation about how to use that at [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch), so check that out if you want to know how to use the fetch api in general.
 
 This library adds one additional property to the options on the fetch method: `cancellationPromise`.  
 
 So the idea is that you can create this promise and pass it in when you initiate the fetch request.  Then if at any point you resolve that promise, the request will be aborted.
 
-There was already an example in the [Install](#install) section, but here's another:
+
+The simplest use case is to cancel the request after a fixed amount of time using `setTimeout`:
+
+
+Another common example is 
 
 ```javascript
 var cancellationCallback;
@@ -94,10 +98,11 @@ Build From Source
 =================
 This thing is written in typescript, so it does require a compilation step.  
 
-To run the build, the only thing you have to install manually is [Node.js](https://nodejs.org) with [npm](https://www.npmjs.com/).  Then you can install the other dependencies by running this once:  
+To run the build, the only thing you have to install manually is [Node.js](https://nodejs.org) with [npm](https://www.npmjs.com/).  Then you can install the other dependencies by running these commands from the root directory of the repository:  
 
 ```sh
 npm install
+npm run init
 ```
 
 The build can be run through npm with the `build` script, which compiles everything and runs the tests with phantomjs.  You can also run the tests in several browsers with the `karma` script.  Like this:
@@ -106,3 +111,5 @@ The build can be run through npm with the `build` script, which compiles everyth
 npm run build
 npm run karma
 ```
+
+That will fill the dist directory with the resulting js files.  And that's about it, I guess?
