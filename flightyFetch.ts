@@ -1,4 +1,3 @@
-
 /**
  * The options for starting a fetch request.
  */
@@ -7,6 +6,11 @@ export interface FlightyFetchInit extends RequestInit {
 	 * A promise that will resolve to true if the fetch request should be cancelled.
 	 */
 	cancellationPromise?: Promise<boolean>;
+
+	/**
+	 * A token that indicates whether the fetch request should be cancelled.
+	 */
+	cancellationToken?: CancellationToken;
 }
 
 /**
@@ -26,8 +30,10 @@ export function fetch(input: string | Request, options?: FlightyFetchInit): Prom
 		}
 
 		var cancellationPromise: Promise<boolean>;
+		var cancellationToken: CancellationToken;
 		if (options) {
 			cancellationPromise = options.cancellationPromise;
+			cancellationToken = options.cancellationToken;
 		}
 
 		var xhr = new XMLHttpRequest();
@@ -97,16 +103,18 @@ export function fetch(input: string | Request, options?: FlightyFetchInit): Prom
 			xhr.responseType = 'blob';
 		}
 
-		// Here's the only reason this library exists
 		if (cancellationPromise && typeof cancellationPromise.then === 'function') {
-			cancellationPromise.then(function (isCancelled: boolean) {
-				if (isCancelled !== false) {
+			cancellationPromise.then(function (isCancellationRequested: boolean) {
+				if (isCancellationRequested) {
 					xhr.abort();
 				}
 			}).catch(function (e) {
-				// We don't care about an error, but some browsers (Chrome)  will 
+				// We don't care about an error, but some browsers (Chrome) will 
 				// put an error in the console if we don't have a handler for it.
 			});
+		}
+		if (cancellationToken && typeof cancellationToken.register === 'function') {
+			cancellationToken.register(() => xhr.abort());
 		}
 
 		getRequestDataAsync(request).then(function (data) {
@@ -129,6 +137,61 @@ export function fetch(input: string | Request, options?: FlightyFetchInit): Prom
 }
 
 /**
+ * A token used to indicate the cancellation status of an operation.
+ */
+export class CancellationToken {
+	private _isCancellationRequested: boolean = false;
+	private _onCancelledCallbacks: (() => void)[] = [];
+
+	/**
+	 * Constructs a token that requests cancellation when the executor's cancel is called.
+	 * 
+	 * @param a function that will be called immediately to provide access to a cancel function and a and dispose function
+	 */
+	constructor(executor: (cancel: () => void, dispose?: () => void) => void) {
+		var ct = this;
+		function cancel() {
+			if (ct._onCancelledCallbacks === null) throw new Error('The token has been disposed.');
+
+			ct._isCancellationRequested = true;
+
+			let onCancelledCallbacks = ct._onCancelledCallbacks;
+			while (onCancelledCallbacks.length > 0) {
+				let onCancelled = onCancelledCallbacks.pop();
+				onCancelled();
+			}
+		}
+		function dispose() {
+			ct._onCancelledCallbacks = null;
+		}
+		executor(cancel, dispose);
+	}
+
+	/**
+	 * Returns true if cancellation has been requested by the source of this token.
+	 */
+	get isCancellationRequested() {
+		return this._isCancellationRequested;
+	}
+
+	/**
+	 * Registers a callback to be called when cancellation is requested for this token.
+	 * If the token has already been cancelled then the callback will be called immediately.
+	 * 
+	 * @param callback a function that will be called when and if the token is cancelled
+	 */
+	register(onCancelled: () => void): void {
+		if (typeof (onCancelled) !== 'function') throw new Error('onCancelled must be a function');
+		if (this._onCancelledCallbacks === null) throw new Error('The token has been disposed.');
+		if (this._isCancellationRequested === true) {
+			onCancelled();
+			return;
+		}
+		this._onCancelledCallbacks.push(onCancelled);
+	}
+}
+
+/**
  * An error thrown if a fetch is cancelled.
  */
 export class CancellationError extends Error {
@@ -142,7 +205,7 @@ export class CancellationError extends Error {
 		this.name = 'CancellationError';
 		this.message = message;
 	}
-	
+
 	/**
 	 * Returns a string that includes the error name and message. 
 	 */

@@ -77,8 +77,10 @@ return /******/ (function(modules) { // webpackBootstrap
 	            request = new Request(input, options);
 	        }
 	        var cancellationPromise;
+	        var cancellationToken;
 	        if (options) {
 	            cancellationPromise = options.cancellationPromise;
+	            cancellationToken = options.cancellationToken;
 	        }
 	        var xhr = new XMLHttpRequest();
 	        xhr.onload = function () {
@@ -145,16 +147,18 @@ return /******/ (function(modules) { // webpackBootstrap
 	        if ('responseType' in xhr && typeof request.blob === 'function') {
 	            xhr.responseType = 'blob';
 	        }
-	        // Here's the only reason this library exists
 	        if (cancellationPromise && typeof cancellationPromise.then === 'function') {
-	            cancellationPromise.then(function (isCancelled) {
-	                if (isCancelled !== false) {
+	            cancellationPromise.then(function (isCancellationRequested) {
+	                if (isCancellationRequested) {
 	                    xhr.abort();
 	                }
 	            }).catch(function (e) {
-	                // We don't care about an error, but some browsers (Chrome)  will 
+	                // We don't care about an error, but some browsers (Chrome) will 
 	                // put an error in the console if we don't have a handler for it.
 	            });
+	        }
+	        if (cancellationToken && typeof cancellationToken.register === 'function') {
+	            cancellationToken.register(function () { return xhr.abort(); });
 	        }
 	        getRequestDataAsync(request).then(function (data) {
 	            try {
@@ -177,6 +181,64 @@ return /******/ (function(modules) { // webpackBootstrap
 	    });
 	}
 	exports.fetch = fetch;
+	/**
+	 * A token used to indicate the cancellation status of an operation.
+	 */
+	var CancellationToken = (function () {
+	    /**
+	     * Constructs a token that requests cancellation when the executor's cancel is called.
+	     *
+	     * @param a function that will be called immediately to provide access to a cancel function and a and dispose function
+	     */
+	    function CancellationToken(executor) {
+	        this._isCancellationRequested = false;
+	        this._onCancelledCallbacks = [];
+	        var ct = this;
+	        function cancel() {
+	            if (ct._onCancelledCallbacks === null)
+	                throw new Error('The token has been disposed.');
+	            ct._isCancellationRequested = true;
+	            var onCancelledCallbacks = ct._onCancelledCallbacks;
+	            while (onCancelledCallbacks.length > 0) {
+	                var onCancelled = onCancelledCallbacks.pop();
+	                onCancelled();
+	            }
+	        }
+	        function dispose() {
+	            ct._onCancelledCallbacks = null;
+	        }
+	        executor(cancel, dispose);
+	    }
+	    Object.defineProperty(CancellationToken.prototype, "isCancellationRequested", {
+	        /**
+	         * Returns true if cancellation has been requested by the source of this token.
+	         */
+	        get: function () {
+	            return this._isCancellationRequested;
+	        },
+	        enumerable: true,
+	        configurable: true
+	    });
+	    /**
+	     * Registers a callback to be called when cancellation is requested for this token.
+	     * If the token has already been cancelled then the callback will be called immediately.
+	     *
+	     * @param callback a function that will be called when and if the token is cancelled
+	     */
+	    CancellationToken.prototype.register = function (onCancelled) {
+	        if (typeof (onCancelled) !== 'function')
+	            throw new Error('onCancelled must be a function');
+	        if (this._onCancelledCallbacks === null)
+	            throw new Error('The token has been disposed.');
+	        if (this._isCancellationRequested === true) {
+	            onCancelled();
+	            return;
+	        }
+	        this._onCancelledCallbacks.push(onCancelled);
+	    };
+	    return CancellationToken;
+	}());
+	exports.CancellationToken = CancellationToken;
 	/**
 	 * An error thrown if a fetch is cancelled.
 	 */

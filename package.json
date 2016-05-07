@@ -1,6 +1,6 @@
 {
   "name": "flightyfetch",
-  "version": "0.9.0-dev",
+  "version": "1.0.0-dev",
   "description": "",
   "main": "dist/flightyFetch.js",
   "typings": "dist/flightyFetch.d.ts",
