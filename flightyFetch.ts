@@ -14,7 +14,7 @@ export interface FlightyFetchInit extends RequestInit {
 }
 
 /**
- * Fetches a resource like the standard fetch function, but with support for cancellation.
+ * Fetches a resource like the standard fetch function, but with added support for cancellation.
  * 
  * @param input the url or request
  * @param options (optional) any options for initializing the request
@@ -200,7 +200,7 @@ export class CancellationError extends Error {
 	 * 
 	 * @param message the message for this error 
 	 */
-	constructor(public message: string) {
+	constructor(message: string) {
 		super(message);
 		this.name = 'CancellationError';
 		this.message = message;
@@ -232,6 +232,7 @@ function parseResponseHeaders(xhr: XMLHttpRequest): Headers {
 			result.append(name, value);
 		} catch (e) {
 			// Some headers may not be allowed in a non-polyfill implementation.
+			// So if we got an error, we'll just ignore it.
 		}
 	}
 	return result;

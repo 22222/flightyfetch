@@ -4,35 +4,40 @@ Overview
 ========
 The fetch api is a huge improvement over XMLHttpRequest for performing ajax requests.  And there's already a great [polyfill](https://github.com/github/fetch) for it, so you can be using it now.
 
-There's just one big thing missing: XHR has an `abort` function for cancelling a request, and so far there's no equivalent feature in the fetch api.  There's an [issue](https://github.com/whatwg/fetch/issues/27) for adding the feature, but it could be a long time before any consensus is reached.
+There's just one big thing missing: XHR has an `abort` function for cancelling a request, and so far there's no equivalent feature in the fetch api.  There's an [issue](https://github.com/whatwg/fetch/issues/27) for adding the feature, but it could be a long time before cancellation actually makes it into the specification.
 
-So that's where this library comes in: the goal is for this to be completely compatible with the fetch api except for the addition of a cancellation feature.
+So that's where this library comes in: the goal is for this to be completely compatible with the fetch api except for the addition of a cancellation feature.  
 
-Cancellation
-============
+This will probably become obsolete once a real cancellation feature is finalized.  But if you can't wait to use the fetch api and need cancellation, then this is the library for you.
+
+
+Usage
+=====
+Except for the addition of the cancellation feature, using this is exactly like using the [fetch api](https://fetch.spec.whatwg.org/).  There's already great documentation about how to use that at [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch), so check that out if you want to know how to use the fetch api in general.
+
 Cancellation is supported through a `CancellationToken` object that can let you know when a fetch should be cancelled.  The provided `CancellationToken` class has a constructor that's very similar to an ES6 Promise.  Once you've created the token, it can be passed in as a property on the fetch options object.  Here's an example:
 
 ```js
-var cancellationToken = new CancellationToken(function(cancel) {
+var cancellationToken = new flightyFetch.CancellationToken(function(cancel) {
 	setTimeout(function() { cancel(); }, 1000);
 });
-flightyFetch('https://api.github.com/repositories', {
+flightyFetch.fetch('https://api.github.com/repositories', {
 	cancellationToken: cancellationToken
-});
+})
 ```
 
-We've seen that creating a cancellation token is very similar to creating an ES6 promise, and the way they're used is kind of similar.  Would it make sense to forget about tokens and just use a promise instead?  That's an option too:
+Creating and using these cancellation tokens is very similar to ES6 promises.  Would it make sense to forget about tokens and just use a promise instead?  That's an option too:
 
 ```js
 var cancellationPromise = new Promise(function(resolve) {
 	setTimeout(function() { resolve(true); }, 1000);
 });
-flightyFetch('https://api.github.com/repositories', {
+flightyFetch.fetch('https://api.github.com/repositories', {
 	cancellationPromise: cancellationPromise
-});
+})
 ```
 
-The idea here is that you're promising to tell the fetch function whether it is cancelled.  So you resolve with true to say "isCancellationRequested = true".  If you resolve with a falsey value or reject the promise, then that means that the fetch will not be cancelled.
+The idea here is that you're promising to tell the fetch function if it should be cancelled.  So you resolve with true to say "isCancellationRequested = true".  If you resolve with a falsey value or reject the promise, then that means that the fetch will not be cancelled.
 
 Is this a misuse of the promise concept?  I don't know, maybe.  It's up to you to decide.
 
@@ -98,13 +103,12 @@ declare class CancellationToken {
 }
 ```
 
-This version actually has a lot of similarities the ES6 promise class:
+This version actually has a lot of similarities to the ES6 promise class.  Here's what a simplified view of a promise for cancellation could look like:
 
 ```typescript
-declare class Promise<T> {
+declare class Promise {
 	constructor(executor: (resolve: () => void, reject?: () => void) => void);
-	then<U>(onResolved?: (value: T) => U | Thenable<U>, onRejected?: (error: any) => any): Promise<U>;
-	catch<U>(onRejected?: (error: any) => U | Thenable<U>): Promise<U>;
+	then(onResolved?: (isCancellationRequsted: boolean) => boolean | Promise): Promise;
 }
 ```
 
@@ -124,7 +128,7 @@ That doesn't seem like a very useful thing to do, especially in the single-threa
 
 The `CancellationToken` class does seem to have a very similar purpose to the `Promise` class, so it seems a little redundant to have both.  But at the same time, it doesn't feel exactly like what promises were designed for.
 
-But in the end, the decision was not to decide: both the token and promise versions are supported.  This is just a library, not a specification, so maybe it's better to provide the choice and see if one of the two options ends up more popular.
+In the end, the decision was not to decide: both the token and promise versions are supported.  This is just an optional library, not a specification, so maybe it's better to provide the choice and see if one of the two options ends up more popular.
 
 
 Installation
@@ -144,21 +148,13 @@ npm install whatwg-fetch
 Then it can be used like this:
 
 ```javascript
-var flightyFetch = require('flightyfetch').fetch;
-flightyFetch('https://api.github.com/repositories', {
-	cancellationPromise: new Promise(function(resolve) {
-		setTimeout(function() { resolve(true); }, 1000);
-	})
-}).then(function(response) { 
-	return response.json();
-}).then(function(responseJson) {
-	console.log(responseJson);
-}).catch(function(e) {
-	console.log(e);
+var flightyFetch = require('flightyfetch');
+flightyFetch.fetch('https://api.github.com/repositories', {
+	cancellationToken: new flightyFetch.CancellationToken(function(cancel) { })
 });
 ```
 
-You can also download [flightyFetch.js](dist/flightyFetch.js) or the [minified](dist/flightyFetch.min.js) version directly, and then use them like this:
+You can also download [flightyFetch.js](dist/flightyFetch.js) or the [minified version](dist/flightyFetch.min.js) directly, and then use it like this:
 
 ```html
 <script src="dist/flightyFetch.js"></script>
@@ -167,21 +163,15 @@ flightyFetch.fetch('https://api.github.com/repositories');
 </script>
 ```
 
-Usage
-=====
-Except for the addition of the cancellation feature, using this is exactly like using the [fetch api](https://fetch.spec.whatwg.org/).  There's already great documentation about how to use that at [MDN](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch), so check that out if you want to know how to use the fetch api in general.
-
-This library adds one additional property to the options on the fetch method: `cancellationPromise`.  
-
-So the idea is that you can create this promise and pass it in when you initiate the fetch request.  Then if at any point you resolve that promise, the request will be aborted.
-
-Example:
+Examples
+========
+Here's an example that uses a token to cancel a fetch after one second:
 
 ```javascript
-var cancellationCallback;
+var cancel;
 flightyFetch.fetch('https://api.github.com/repositories', {
-	cancellationPromise: new Promise(function(resolve) {
-		cancellationCallback = resolve
+	cancellationToken: new flightyFetch.CancellationToken(function(c) {
+		cancel = c;
 	})
 }).then(function(response) { 
 	return response.json();
@@ -196,34 +186,50 @@ flightyFetch.fetch('https://api.github.com/repositories', {
 });
 
 setTimeout(function() { 
-	cancellationCallback();
-}, 1);
+	cancel();
+}, 1000);
 ```
 
-There are two ways of looking at the cancellation promise:
+And the same thing using a promise instead of a token:
 
-1. The promise is resolved with an isCancelled value: true to cancel the fetch, or false if the fetch will never be cancelled.
-2. The promise is resolved (with no value) if the fetch is cancelled, or rejected if the fetch will never be cancelled
+```javascript
+var resolveCancellationRequested;
+flightyFetch.fetch('https://api.github.com/repositories', {
+	cancellationPromise: new Promise(function(resolve) {
+		resolveCancellationRequested = resolve
+	})
+}).then(function(response) { 
+	return response.json();
+}).then(function(responseJson) {
+	console.log('responseJson', responseJson);
+}).catch(function(e) {
+	if (e.name === 'CancellationError') {
+		console.log('Request cancelled', e);
+	} else {
+		console.log('Request failed', e);
+	}
+});
 
-Fortunately, these two schemes are compatible.  So both are supported: the promise is cancelled if you resolve with any value other than `false`, and it is not cancelled if you reject the promise.
+setTimeout(function() { 
+	resolveCancellationRequested(true);
+}, 1000);
+```
 
-Also, it is safe to resolve/reject the cancellation promise at any time.  If the fetch request is already complete, then nothing will happen.
-
-Check out the [demo](http://htmlpreview.github.io/?https://github.com/22222/flightyfetch/blob/master/demo.html) page for some more complete examples.
+Check out the [demo](http://htmlpreview.github.io/?https://github.com/22222/flightyfetch/blob/master/demo.html) page for more examples.
 
 
 Building From Source
 ====================
 This thing is written in typescript, so it does require a compilation step.  
 
-To run the build, the only thing you have to install manually is [Node.js](https://nodejs.org) with [npm](https://www.npmjs.com/).  Then you can install the other dependencies by running these commands from the root directory of the repository:  
+The only thing you have to install manually is [Node.js](https://nodejs.org) with [npm](https://www.npmjs.com/).  Then you can install the other dependencies by running these commands from the root directory of the repository:  
 
 ```sh
 npm install
 npm run init
 ```
 
-Then you can use the npm `build` script to compile everything into the dist folder and runs some tests:
+With that done, you can use the npm `build` script to compile everything into the `dist` folder and run some tests:
 
 ```sh
 npm run build

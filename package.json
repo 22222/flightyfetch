@@ -1,9 +1,16 @@
 {
   "name": "flightyfetch",
   "version": "1.0.0-dev",
-  "description": "",
+  "description": "The fetch api with cancellation.",
   "main": "dist/flightyFetch.js",
   "typings": "dist/flightyFetch.d.ts",
+  "files": [
+    "dist/flightyFetch.js",
+    "dist/flightyFetch.d.ts",
+    "dist/flightyFetch.js.map",
+    "dist/flightyFetch.min.js",
+    "dist/flightyFetch.min.js.map"
+  ],
   "scripts": {
     "init": "typings install",
     "clean": "rimraf ./dist",
@@ -13,11 +20,15 @@
     "test": "mocha-phantomjs tests.html",
     "compile:test": "npm run compile && npm run test",
     "minify": "cd dist && uglifyjs flightyFetch.js -o flightyFetch.min.js --source-map-in flightyFetch.js.map --source-map flightyFetch.min.js.map",
-    "karma": "karma start --single-run",
-    "build": "npm run clean && npm run compile && npm run minify && npm run test"
+    "build": "npm run clean && npm run compile && npm run minify && npm run test",
+    "karma": "karma start --single-run"
   },
   "author": "22222",
   "license": "Unlicense",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/22222/flightyfetch.git"
+  },
   "devDependencies": {
     "chai": "^3.5.0",
     "es6-promise": "^3.1.2",

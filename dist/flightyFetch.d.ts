@@ -12,7 +12,7 @@ export interface FlightyFetchInit extends RequestInit {
     cancellationToken?: CancellationToken;
 }
 /**
- * Fetches a resource like the standard fetch function, but with support for cancellation.
+ * Fetches a resource like the standard fetch function, but with added support for cancellation.
  *
  * @param input the url or request
  * @param options (optional) any options for initializing the request
@@ -47,7 +47,6 @@ export declare class CancellationToken {
  * An error thrown if a fetch is cancelled.
  */
 export declare class CancellationError extends Error {
-    message: string;
     /**
      * Constructs a cancellation error with the specified message.
      *

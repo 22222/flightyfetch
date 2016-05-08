@@ -61,7 +61,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 	};
 	/**
-	 * Fetches a resource like the standard fetch function, but with support for cancellation.
+	 * Fetches a resource like the standard fetch function, but with added support for cancellation.
 	 *
 	 * @param input the url or request
 	 * @param options (optional) any options for initializing the request
@@ -251,7 +251,6 @@ return /******/ (function(modules) { // webpackBootstrap
 	     */
 	    function CancellationError(message) {
 	        _super.call(this, message);
-	        this.message = message;
 	        this.name = 'CancellationError';
 	        this.message = message;
 	    }
