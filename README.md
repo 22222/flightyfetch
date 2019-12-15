@@ -1,5 +1,9 @@
 A javascript library that adds cancellation to the [fetch api](https://fetch.spec.whatwg.org/).
 
+Obsolete
+========
+Update: This repository is obsolete.  The real fetch method now supports aborting requests through AbortController and AbortSignal APIs.  It's recommended that you use that or [a polyfill of it](https://github.com/github/fetch) directly instead of using this library.
+
 Overview
 ========
 The fetch api is a huge improvement over XMLHttpRequest for performing ajax requests.  And there's already a great [polyfill](https://github.com/github/fetch) for it, so you can be using it now.
